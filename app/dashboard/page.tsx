@@ -1,6 +1,7 @@
 import Summary from 'app/dashboard/summary';
 
 import AIHealthCoach from 'components/ai/health-coach';
+import AIRecommendationCoach from 'components/ai/recommendation';
 import { DatePickerProvider } from 'components/context/datepicker-provider';
 import { OverviewContextProvider } from 'components/context/overview-provider';
 import LayoutHeader from 'components/layout/header';
@@ -21,8 +22,9 @@ export default async function Page() {
 							<Charts />
 						</div>
 						<h2 className="mb-4 mt-4 font-semibold text-primary dark:text-white">AI Analysis</h2>
-						<div className="mb-8 max-w-xl">
+						<div className="mb-8 grid grid-cols-1 gap-4 xl:grid-cols-2">
 							<AIHealthCoach />
+							<AIRecommendationCoach />
 						</div>
 					</div>
 					<AddData />
