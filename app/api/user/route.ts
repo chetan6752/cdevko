@@ -9,6 +9,8 @@ import { Database } from 'lib/database.types';
 import resend from 'lib/email';
 import prisma from 'lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 import messages, { emails } from 'constants/messages';
 
 const supabaseAdmin = createClient<Database>(

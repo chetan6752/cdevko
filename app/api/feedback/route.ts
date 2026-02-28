@@ -8,6 +8,8 @@ import prisma from 'lib/prisma';
 
 import { emails } from 'constants/messages';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
 	const { message } = await request.json();
 	return await checkAuth(async (user: any) => {
