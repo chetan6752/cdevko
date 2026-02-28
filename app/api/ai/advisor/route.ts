@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { checkAuth } from "lib/auth"; 
+import { checkAuth } from "lib/auth";
+
+export const dynamic = 'force-dynamic'; 
 
 export async function POST(req: Request) {
   return await checkAuth(async (user: any) => {
