@@ -14,7 +14,7 @@ const url = {
 	app: {
 		signin: '/signin',
 		signup: '/signup',
-		overview: '/',
+		overview: '/dashboard',
 	},
 	twitter: '',
 	github: '',
