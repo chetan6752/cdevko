@@ -4,7 +4,7 @@ import { Body, Container, Head, Heading, Html, Img, Preview, Section, Tailwind, 
 
 import Footer from './footer';
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dev-ko.vercel.app';
 
 export default function FeedbackEmail({ message = '', email = '' }: { message?: string; email?: string }) {
 	return (

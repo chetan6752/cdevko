@@ -17,8 +17,8 @@ import {
 import Footer from './footer';
 import Footnote from './footnote';
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-const settingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/settings`;
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dev-ko.vercel.app';
+const settingUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dev-ko.vercel.app'}/settings`;
 
 type PlanExpiredProps = { plan?: string };
 

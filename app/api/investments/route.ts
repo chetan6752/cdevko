@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkAuth } from 'lib/auth';
 import prisma from 'lib/prisma';
 
-export const dynamic = 'force-dynamic';
-
 import messages from 'constants/messages';
+
+export const dynamic = 'force-dynamic';
 
 type Where = {
 	user_id: string;

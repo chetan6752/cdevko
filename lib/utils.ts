@@ -6,8 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const getRedirectUrl = () => {
-	// Use NEXT_PUBLIC_SITE_URL env var, fallback to localhost:3000
-	const url = process?.env?.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+	// Use NEXT_PUBLIC_SITE_URL env var, fallback to production URL
+	const url = process?.env?.NEXT_PUBLIC_SITE_URL || 'https://dev-ko.vercel.app';
 	// Ensure trailing slash for Supabase consistency
 	return url.endsWith('/') ? url : `${url}/`;
 };
