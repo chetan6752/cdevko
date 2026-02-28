@@ -37,13 +37,17 @@ export const metadata = {
 export const revalidate = 0;
 
 async function getUser(cookies: any) {
-	const res = await fetch(`${url.serverApi}/${apiUrls.user.modify}`, {
-		headers: { cookie: cookies },
-	});
-	if (!res.ok) {
+	try {
+		const res = await fetch(`${url.serverApi}/${apiUrls.user.modify}`, {
+			headers: { cookie: cookies },
+		});
+		if (!res.ok) {
+			return {};
+		}
+		return await res.json();
+	} catch (error) {
 		return {};
 	}
-	return await res.json();
 }
 
 export default async function Layout({ children }: any) {
