@@ -104,7 +104,7 @@ export default function AddExpense({ show, onHide, mutate, selected, lookup }: A
 					}}
 				>
 					<div className="relative">
-						<Label htmlFor="name">Name</Label>
+						<Label htmlFor="name">Type of Expense</Label>
 						<Input
 							className="mt-1.5"
 							id="name"

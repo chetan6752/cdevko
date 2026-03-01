@@ -18,7 +18,7 @@ import {
 import Footer from './footer';
 import Footnote from './footnote';
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dev-ko.vercel.app';
 
 export const SignInEmail = ({ action_link = '' }: { action_link?: string }) => {
 	return (

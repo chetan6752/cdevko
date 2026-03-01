@@ -29,24 +29,24 @@ import shortcuts from 'constants/shortcuts';
 import SidebarLink from './link';
 
 const dashboardLinks = [
-	{ name: 'Overview', href: '/', Icon: OverviewIcon, shortcutText: shortcuts.menu.overview.shortcut },
-	{ name: 'Income', href: '/income', Icon: IncomeIcon, shortcutText: shortcuts.menu.income.shortcut },
-	{ name: 'Expenses', href: '/expenses', Icon: ExpensesIcon, shortcutText: shortcuts.menu.expenses.shortcut },
+	{ name: 'Overview', href: '/dashboard', Icon: OverviewIcon, shortcutText: shortcuts.menu.overview.shortcut },
+	{ name: 'Income', href: '/dashboard/income', Icon: IncomeIcon, shortcutText: shortcuts.menu.income.shortcut },
+	{ name: 'Expenses', href: '/dashboard/expenses', Icon: ExpensesIcon, shortcutText: shortcuts.menu.expenses.shortcut },
 	{
 		name: 'Investments',
-		href: '/investments',
+		href: '/dashboard/investments',
 		Icon: InvestmentIcon,
 		shortcutText: shortcuts.menu.investments.shortcut,
 	},
 	{
 		name: 'Subscriptions',
-		href: '/subscriptions',
+		href: '/dashboard/subscriptions',
 		Icon: SubscriptionsIcon,
 		shortcutText: shortcuts.menu.subscriptions.shortcut,
 	},
 	{
 		name: 'Goals',
-		href: '/goals',
+		href: '/dashboard/goals',
 		Icon: GoalIcon,
 		shortcutText: '',
 	},
@@ -54,7 +54,7 @@ const dashboardLinks = [
 
 const settingsLinks = [
 	{ href: 'mailto:team@mayurbadgujar.me', name: 'Support', Icon: SupportIcon },
-	{ href: '/settings', name: 'Settings', Icon: SettingsIcon },
+	{ href: '/dashboard/settings', name: 'Settings', Icon: SettingsIcon },
 ];
 
 const menuShortcutList = Object.values(shortcuts.menu).map((_) => _.shortcut);
@@ -73,11 +73,11 @@ export default function Sidebar() {
 		menuShortcutList,
 		(_, handler) => {
 			const keys = handler.keys?.join('');
-			if (keys === shortcuts.menu.overview.shortcut) router.push('/');
-			if (keys === shortcuts.menu.income.shortcut) router.push('/income');
-			if (keys === shortcuts.menu.expenses.shortcut) router.push('/expenses');
-			if (keys === shortcuts.menu.investments.shortcut) router.push('/investments');
-			if (keys === shortcuts.menu.subscriptions.shortcut) router.push('/subscriptions');
+			if (keys === shortcuts.menu.overview.shortcut) router.push('/dashboard');
+			if (keys === shortcuts.menu.income.shortcut) router.push('/dashboard/income');
+			if (keys === shortcuts.menu.expenses.shortcut) router.push('/dashboard/expenses');
+			if (keys === shortcuts.menu.investments.shortcut) router.push('/dashboard/investments');
+			if (keys === shortcuts.menu.subscriptions.shortcut) router.push('/dashboard/subscriptions');
 		},
 		options
 	);
@@ -105,7 +105,7 @@ export default function Sidebar() {
 						<div className="flex flex-col items-center">
 							<Link
 								onClick={() => setShow(false)}
-								href="/"
+								href="/dashboard"
 								className="mt-[3px] active:scale-95 rounded-lg p-1 transition-all focus:outline-none"
 							>
 								<Image className="block" src={SvgWhiteLogo} width={30} height={30} alt="DevKo Finance" />

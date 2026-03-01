@@ -87,31 +87,6 @@ const features = [
 				<path d="M5.5 19q-.625 0-1.062-.438Q4 18.125 4 17.5v-15q0-.625.438-1.062Q4.875 1 5.5 1h9q.625 0 1.062.438Q16 1.875 16 2.5v15q0 .625-.438 1.062Q15.125 19 14.5 19Zm0-2.5v1h9v-1Zm0-1.5h9V5h-9Zm0-11.5h9v-1h-9Zm0 0v-1 1Zm0 13v1Z" />
 			</svg>
 		),
-		screenshotUrl: '/demo/responsive.jpg',
-	},
-	{
-		name: 'Export Data',
-		description: 'Export your data in the CSV file format, which is widely supported.',
-		Icon: () => (
-			<svg
-				className="ml-[-6px] mr-2 mt-[1px] h-5 w-5"
-				xmlns="http://www.w3.org/2000/svg"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-				strokeWidth="2"
-				height="24"
-				width="24"
-			>
-				<path
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-				></path>
-			</svg>
-		),
-		screenshotUrl: '/demo/export.jpg',
-		demoUrl: '/demo/export.mp4',
 	},
 ];
 
@@ -119,7 +94,7 @@ export default function Features() {
 	const [selected, setSelected] = useState(0);
 	return (
 		<>
-			<div className="mx-auto block h-fit max-w-sm rounded-2xl  border-[1px] bg-white p-2 sm:w-96 lg:ml-[-50px]">
+			<div className="mx-auto block h-fit w-full max-w-lg rounded-2xl border-[1px] bg-white p-2">
 				{features.map((feature, index) => {
 					const isSelected = index === selected;
 					return (
@@ -157,20 +132,6 @@ export default function Features() {
 						</div>
 					);
 				})}
-			</div>
-			<div className="relative max-w-xl overflow-hidden whitespace-nowrap rounded-lg border-[1px] bg-white shadow lg:mt-[30px] lg:h-[360px] lg:w-[860px]">
-				<video
-					playsInline
-					autoPlay
-					muted
-					loop
-					width="1200"
-					height="400"
-					src={features[selected].demoUrl ? features[selected].demoUrl : features[selected].screenshotUrl}
-					poster={features[selected].screenshotUrl}
-				>
-					Your browser does not support the video tag.
-				</video>
 			</div>
 		</>
 	);

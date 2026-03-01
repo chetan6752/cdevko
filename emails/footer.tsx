@@ -1,6 +1,6 @@
 import { Hr, Link, Text } from '@react-email/components';
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dev-ko.vercel.app';
 
 export default function Footer() {
 	return (
