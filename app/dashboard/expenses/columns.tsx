@@ -11,7 +11,7 @@ import { formatCurrency, formatDate } from 'lib/formatter';
 import { expensesCategory, expensesPay } from 'constants/categories';
 
 export type Expenses = {
-	name: string;
+	Type: string;
 	date: string;
 	price: string;
 	category: string;
