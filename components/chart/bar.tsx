@@ -8,25 +8,31 @@ import { useUser } from 'components/context/auth-provider';
 import { useOverview } from 'components/context/overview-provider';
 import ChartLoader from 'components/loader/chart';
 
-import { extractChartAxis, extractExpenses, extractExpensesCategory } from 'lib/extractor';
-import { formatCurrency } from 'lib/formatter';
+import { formatCurrency, formatDate } from 'lib/formatter';
 
-const dataFormatter = (number: number) => {
-	return '$ ' + Intl.NumberFormat('us').format(number).toString();
+type ExpenseDatum = {
+	date: string;
+	price: string | number;
+	category: string;
 };
 
+type ChartDatum = {
+	date: string;
+	dateSortKey: string;
+	[key: string]: string | number;
+};
+
+const dateStyle = { day: '2-digit', month: 'short', year: '2-digit' };
+
 const customTooltip = ({ payload, active, user }: { payload?: any; active?: boolean; user: any }) => {
-	if (!active || !payload) return null;
+	if (!active || !payload?.length) return null;
 	return (
-		<div className="w-56 rounded-tremor-default text-tremor-default bg-tremor-background p-2 shadow-tremor-dropdown border border-tremor-border">
-			{payload.map((category: any, idx: number) => (
-				<div className={`flex items-center justify-between`} key={idx}>
-					<div className="flex items-center">
-						<span className={`bg-${category.color}-500 p-0.5 rounded-full inline-block w-2 h-2`}></span>
-						<span className="text-black ml-2 capitalize ">{category.dataKey}</span>
-					</div>
-					<span className="text-black flex ml-2">
-						{formatCurrency({ value: category.value, currency: user.currency, locale: user.locale })}
+		<div className="w-60 rounded-tremor-default border border-tremor-border bg-tremor-background p-2 text-tremor-default shadow-tremor-dropdown">
+			{payload.map((item: any, idx: number) => (
+				<div className="flex items-center justify-between" key={idx}>
+					<span className="mr-3 capitalize text-black">{item.dataKey}</span>
+					<span className="text-black">
+						{formatCurrency({ value: item.value, currency: user.currency, locale: user.locale })}
 					</span>
 				</div>
 			))}
@@ -37,12 +43,43 @@ const customTooltip = ({ payload, active, user }: { payload?: any; active?: bool
 export default function ExpesenseChart() {
 	const user = useUser();
 	const { data, loading } = useOverview();
-	const chartData = useMemo<Array<any>>(
-		() => extractExpenses(data.expenses, user.locale),
-		[data.expenses, user.locale]
-	);
-	const categoriesData = useMemo<Array<string>>(() => extractExpensesCategory(data.expenses), [data.expenses]);
-	const [maxXAxisValue] = useMemo<Array<any>>(() => extractChartAxis(data.expenses), [data.expenses]);
+
+	const categoriesData = useMemo(() => {
+		return Array.from(new Set((data.expenses as ExpenseDatum[]).map((expense) => expense.category))).sort();
+	}, [data.expenses]);
+
+	const chartData = useMemo<ChartDatum[]>(() => {
+		const groupedByDate = (data.expenses as ExpenseDatum[]).reduce(
+			(acc, expense) => {
+				const dateSortKey = new Date(expense.date).toISOString().split('T')[0];
+				if (!acc[dateSortKey]) {
+					acc[dateSortKey] = {
+						dateSortKey,
+						date: formatDate({ date: dateSortKey, locale: user.locale, dateStyle }),
+					};
+				}
+
+				acc[dateSortKey][expense.category] =
+					Number(acc[dateSortKey][expense.category] ?? 0) + Number(expense.price);
+
+				return acc;
+			},
+			{} as Record<string, ChartDatum>
+		);
+
+		return Object.values(groupedByDate)
+			.sort((a, b) => a.dateSortKey.localeCompare(b.dateSortKey))
+			.map(({ dateSortKey, ...datum }) => datum as ChartDatum);
+	}, [data.expenses, user.locale]);
+
+	const maxYAxisValue = useMemo(() => {
+		if (!chartData.length || !categoriesData.length) return undefined;
+		return Math.max(
+			...chartData.map((datum) =>
+				categoriesData.reduce((total, category) => total + Number(datum[category] ?? 0), 0)
+			)
+		);
+	}, [chartData, categoriesData]);
 
 	if (loading) {
 		return <ChartLoader className="h-[340px]" type="bar" />;
@@ -62,11 +99,11 @@ export default function ExpesenseChart() {
 				return formatCurrency({ value, currency: user.currency, locale: user.locale });
 			}}
 			yAxisWidth={84}
-			maxValue={maxXAxisValue?.value}
+			maxValue={maxYAxisValue}
 			customTooltip={(props) => customTooltip({ ...props, user })}
 			showLegend
 			showGridLines
-			stack
+			stack={false}
 		/>
 	);
 }
