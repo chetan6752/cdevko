@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { Flag, Lightbulb, PlusCircle, Sparkles, Target, Trash2 } from 'lucide-react';
+import { ChevronDown, Flag, Lightbulb, PlusCircle, Sparkles, Target, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import useSWR, { useSWRConfig } from 'swr';
 
@@ -43,6 +43,10 @@ type GoalPlan = {
         month: string;
         target_amount: number;
         note: string;
+        recommendations: Array<{
+            title: string;
+            description: string;
+        }>;
     }>;
     action_steps: string[];
 };
@@ -228,6 +232,7 @@ function ContributeModal({ goal, onSuccess }: { goal: Goal; onSuccess: () => voi
 
 function GoalAIPlanner({ goals, user }: { goals: Goal[]; user: any }) {
     const [selectedGoalId, setSelectedGoalId] = useState('');
+    const [activeMilestoneIndex, setActiveMilestoneIndex] = useState<number | null>(null);
 
     useEffect(() => {
         if (!goals.length) {
@@ -236,6 +241,7 @@ function GoalAIPlanner({ goals, user }: { goals: Goal[]; user: any }) {
         }
         if (!selectedGoalId || !goals.some((goal) => goal.id === selectedGoalId)) {
             setSelectedGoalId(goals[0].id);
+            setActiveMilestoneIndex(null);
         }
     }, [goals, selectedGoalId]);
 
@@ -267,7 +273,13 @@ function GoalAIPlanner({ goals, user }: { goals: Goal[]; user: any }) {
                     </p>
                 </div>
                 <div className="w-full md:w-[280px]">
-                    <Select value={selectedGoalId} onValueChange={setSelectedGoalId}>
+                    <Select
+                        value={selectedGoalId}
+                        onValueChange={(value) => {
+                            setSelectedGoalId(value);
+                            setActiveMilestoneIndex(null);
+                        }}
+                    >
                         <SelectTrigger>
                             <SelectValue placeholder="Choose goal" />
                         </SelectTrigger>
@@ -330,22 +342,55 @@ function GoalAIPlanner({ goals, user }: { goals: Goal[]; user: any }) {
                                 Milestone Plan
                             </p>
                             <ul className="space-y-3">
-                                {plan.milestones.map((milestone, index) => (
-                                    <li key={`${milestone.title}-${index}`} className="rounded-md bg-muted/40 p-3">
-                                        <div className="mb-1 flex items-center justify-between gap-2">
-                                            <p className="text-sm font-medium">{milestone.title}</p>
-                                            <span className="text-xs text-muted-foreground">{milestone.month}</span>
-                                        </div>
-                                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                            {formatCurrency({
-                                                value: Number(milestone.target_amount || 0),
-                                                currency: user?.currency,
-                                                locale: user?.locale,
-                                            })}
-                                        </p>
-                                        <p className="mt-1 text-xs text-muted-foreground">{milestone.note}</p>
-                                    </li>
-                                ))}
+                                {plan.milestones.map((milestone, index) => {
+                                    const isActive = activeMilestoneIndex === index;
+                                    return (
+                                        <li key={`${milestone.title}-${index}`} className="rounded-md bg-muted/40 p-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setActiveMilestoneIndex(isActive ? null : index)}
+                                                className="w-full text-left"
+                                            >
+                                                <div className="mb-1 flex items-center justify-between gap-2">
+                                                    <div>
+                                                        <p className="text-sm font-medium">{milestone.title}</p>
+                                                        <span className="text-xs text-muted-foreground">{milestone.month}</span>
+                                                    </div>
+                                                    <ChevronDown
+                                                        className={`h-4 w-4 text-muted-foreground transition-transform ${isActive ? 'rotate-180' : ''}`}
+                                                    />
+                                                </div>
+                                                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                                    {formatCurrency({
+                                                        value: Number(milestone.target_amount || 0),
+                                                        currency: user?.currency,
+                                                        locale: user?.locale,
+                                                    })}
+                                                </p>
+                                                <p className="mt-1 text-xs text-muted-foreground">{milestone.note}</p>
+                                            </button>
+
+                                            {isActive && milestone.recommendations?.length ? (
+                                                <div className="mt-3 space-y-2 rounded-md border border-blue-500/20 bg-blue-500/5 p-3">
+                                                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+                                                        How to achieve this milestone
+                                                    </p>
+                                                    <ul className="space-y-2">
+                                                        {milestone.recommendations.map((advice, adviceIndex) => (
+                                                            <li key={`${advice.title}-${adviceIndex}`} className="text-sm">
+                                                                <p className="font-medium text-card-foreground">{advice.title}</p>
+                                                                <p className="text-xs text-muted-foreground">{advice.description}</p>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                    <p className="text-[11px] text-muted-foreground">
+                                                        These are AI suggestions. Match risk level and product suitability before investing.
+                                                    </p>
+                                                </div>
+                                            ) : null}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     ) : null}

@@ -5,11 +5,31 @@ import prisma from 'lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+type MilestoneRecommendation = {
+	title: string;
+	description: string;
+};
+
 type Milestone = {
 	title: string;
 	month: string;
 	target_amount: number;
 	note: string;
+	recommendations: MilestoneRecommendation[];
+};
+
+type GoalPlan = {
+	summary: string;
+	suggested_monthly_save: number;
+	time_horizon_months: number;
+	monthly_budget_split: {
+		income: number;
+		estimated_expenses: number;
+		recommended_goal_contribution: number;
+		leftover_for_buffer: number;
+	};
+	milestones: Milestone[];
+	action_steps: string[];
 };
 
 const formatMonth = (date: Date) =>
@@ -17,6 +37,62 @@ const formatMonth = (date: Date) =>
 		month: 'short',
 		year: 'numeric',
 	}).format(date);
+
+const buildDefaultRecommendations = ({
+	monthlyAmount,
+	monthsLeft,
+}: {
+	monthlyAmount: number;
+	monthsLeft: number;
+}): MilestoneRecommendation[] => {
+	const hasLongerHorizon = monthsLeft >= 12;
+	return [
+		{
+			title: 'SIP in Liquid/Ultra Short Debt Fund',
+			description: `Start a monthly SIP of around ₹${monthlyAmount.toLocaleString('en-IN')} for low-volatility accumulation.`,
+		},
+		{
+			title: hasLongerHorizon ? 'Balanced Mutual Fund SIP' : 'Recurring Deposit / Short FD',
+			description: hasLongerHorizon
+				? 'For longer horizons, allocate a smaller portion to a balanced or hybrid mutual fund for growth potential.'
+				: 'For short horizons, prefer safer capital-preservation options like RD or short fixed deposits.',
+		},
+		{
+			title: 'Auto-transfer to Goal Wallet',
+			description: 'On salary day, auto-transfer this month target so spending decisions do not interrupt progress.',
+		},
+	];
+};
+
+const buildMonthlyMilestones = ({
+	monthsLeft,
+	remainingAmount,
+	suggestedMonthlySave,
+}: {
+	monthsLeft: number;
+	remainingAmount: number;
+	suggestedMonthlySave: number;
+}) => {
+	const now = new Date();
+	let cumulativeTarget = 0;
+
+	return Array.from({ length: monthsLeft }).map((_, index) => {
+		const monthIndex = index + 1;
+		const monthDate = new Date(now.getFullYear(), now.getMonth() + monthIndex, 1);
+		cumulativeTarget = Math.min(remainingAmount, cumulativeTarget + suggestedMonthlySave);
+
+		return {
+			title: `Month ${monthIndex}`,
+			month: formatMonth(monthDate),
+			target_amount: cumulativeTarget,
+			note:
+				monthIndex === monthsLeft
+					? 'Final push month: complete the remaining amount and lock the goal.'
+					: 'Save this month target and review your progress before next month.',
+			recommendations: buildDefaultRecommendations({ monthlyAmount: suggestedMonthlySave, monthsLeft }),
+		};
+	});
+};
 
 const buildFallbackPlan = ({
 	goalName,
@@ -30,34 +106,11 @@ const buildFallbackPlan = ({
 	monthsLeft: number;
 	monthlyIncome: number;
 	monthlyExpense: number;
-}) => {
+}): GoalPlan => {
 	const suggestedMonthlySave = Math.ceil(remainingAmount / Math.max(1, monthsLeft));
 	const disposableIncome = Math.max(0, monthlyIncome - monthlyExpense);
 	const cushionAmount = Math.max(0, disposableIncome - suggestedMonthlySave);
-	const milestoneOne = Math.round(remainingAmount * 0.33);
-	const milestoneTwo = Math.round(remainingAmount * 0.66);
-	const now = new Date();
-
-	const milestones: Milestone[] = [
-		{
-			title: 'Kickoff phase',
-			month: formatMonth(new Date(now.getFullYear(), now.getMonth() + Math.max(1, Math.floor(monthsLeft / 3)), 1)),
-			target_amount: milestoneOne,
-			note: 'Build momentum with automated transfer and avoid non-essential purchases.',
-		},
-		{
-			title: 'Midpoint checkpoint',
-			month: formatMonth(new Date(now.getFullYear(), now.getMonth() + Math.max(1, Math.floor((monthsLeft * 2) / 3)), 1)),
-			target_amount: milestoneTwo,
-			note: 'Review progress and increase contribution by 5-10% if possible.',
-		},
-		{
-			title: 'Goal completion',
-			month: formatMonth(new Date(now.getFullYear(), now.getMonth() + Math.max(1, monthsLeft), 1)),
-			target_amount: remainingAmount,
-			note: 'Complete final contribution and celebrate the milestone.',
-		},
-	];
+	const milestones = buildMonthlyMilestones({ monthsLeft, remainingAmount, suggestedMonthlySave });
 
 	return {
 		summary: `To complete ${goalName}, save around ${suggestedMonthlySave.toLocaleString('en-IN')} each month for the next ${monthsLeft} month(s).`,
@@ -72,9 +125,77 @@ const buildFallbackPlan = ({
 		milestones,
 		action_steps: [
 			`Set up an automatic transfer of ${suggestedMonthlySave.toLocaleString('en-IN')} on salary day.`,
-			'Pause or reduce one discretionary expense category and redirect savings to this goal.',
-			'Review progress every month and adjust contributions after any income/expense changes.',
+			'Create a monthly review reminder to check if you met your goal contribution target.',
+			'Redirect bonus/incentive income into this goal to reduce your completion timeline.',
 		],
+	};
+};
+
+const normalizeRecommendations = (
+	recommendations: any,
+	fallbackRecommendations: MilestoneRecommendation[]
+): MilestoneRecommendation[] => {
+	if (!Array.isArray(recommendations) || !recommendations.length) return fallbackRecommendations;
+
+	const normalized = recommendations
+		.map((item: any) => ({
+			title: typeof item?.title === 'string' && item.title.trim() ? item.title : '',
+			description: typeof item?.description === 'string' && item.description.trim() ? item.description : '',
+		}))
+		.filter((item: MilestoneRecommendation) => item.title && item.description);
+
+	return normalized.length ? normalized : fallbackRecommendations;
+};
+
+const normalizeAIPlan = (plan: any, fallbackPlan: GoalPlan): GoalPlan => {
+	const aiMilestones = Array.isArray(plan?.milestones) ? plan.milestones : [];
+	const normalizedMilestones =
+		aiMilestones.length >= fallbackPlan.time_horizon_months
+			? aiMilestones.slice(0, fallbackPlan.time_horizon_months).map((milestone: any, index: number) => ({
+					title: milestone?.title || `Month ${index + 1}`,
+					month: milestone?.month || fallbackPlan.milestones[index]?.month,
+					target_amount:
+						typeof milestone?.target_amount === 'number'
+							? milestone.target_amount
+							: fallbackPlan.milestones[index]?.target_amount,
+					note: milestone?.note || fallbackPlan.milestones[index]?.note,
+					recommendations: normalizeRecommendations(
+						milestone?.recommendations,
+						fallbackPlan.milestones[index]?.recommendations || []
+					),
+			  }))
+			: fallbackPlan.milestones;
+
+	return {
+		summary: typeof plan?.summary === 'string' && plan.summary.trim() ? plan.summary : fallbackPlan.summary,
+		suggested_monthly_save:
+			typeof plan?.suggested_monthly_save === 'number' && plan.suggested_monthly_save > 0
+				? plan.suggested_monthly_save
+				: fallbackPlan.suggested_monthly_save,
+		time_horizon_months: fallbackPlan.time_horizon_months,
+		monthly_budget_split: {
+			income:
+				typeof plan?.monthly_budget_split?.income === 'number'
+					? plan.monthly_budget_split.income
+					: fallbackPlan.monthly_budget_split.income,
+			estimated_expenses:
+				typeof plan?.monthly_budget_split?.estimated_expenses === 'number'
+					? plan.monthly_budget_split.estimated_expenses
+					: fallbackPlan.monthly_budget_split.estimated_expenses,
+			recommended_goal_contribution:
+				typeof plan?.monthly_budget_split?.recommended_goal_contribution === 'number'
+					? plan.monthly_budget_split.recommended_goal_contribution
+					: fallbackPlan.monthly_budget_split.recommended_goal_contribution,
+			leftover_for_buffer:
+				typeof plan?.monthly_budget_split?.leftover_for_buffer === 'number'
+					? plan.monthly_budget_split.leftover_for_buffer
+					: fallbackPlan.monthly_budget_split.leftover_for_buffer,
+		},
+		milestones: normalizedMilestones,
+		action_steps:
+			Array.isArray(plan?.action_steps) && plan.action_steps.length >= 3
+				? plan.action_steps
+				: fallbackPlan.action_steps,
 	};
 };
 
@@ -143,7 +264,7 @@ export async function POST(req: Request) {
 						{
 							role: 'system',
 							content:
-								'You are a financial goal planner. Return ONLY a JSON object with keys: summary, suggested_monthly_save, time_horizon_months, monthly_budget_split, milestones (array with title/month/target_amount/note), and action_steps (array). No markdown.',
+								'You are a financial goal planner. Return ONLY a JSON object with keys: summary, suggested_monthly_save, time_horizon_months, monthly_budget_split, milestones, and action_steps. IMPORTANT: milestones must be month-wise with one entry for EACH month of time_horizon_months. Each milestone must have title, month, target_amount, note, and recommendations (array of actionable options with title and description). Recommendations should include practical options like SIP, mutual funds, ETFs, and safer alternatives depending on timeline/risk. Include at least 3 action_steps. No markdown.',
 						},
 						{
 							role: 'user',
@@ -160,7 +281,7 @@ export async function POST(req: Request) {
 			}
 
 			const aiContent = JSON.parse(data.choices?.[0]?.message?.content || '{}');
-			return NextResponse.json({ ...fallbackPlan, ...aiContent });
+			return NextResponse.json(normalizeAIPlan(aiContent, fallbackPlan));
 		} catch (error: any) {
 			console.error('[ai/goals-plan] Error:', error.message);
 			return NextResponse.json({

@@ -32,6 +32,7 @@ export const apiUrls = {
 		add: '/api/goals/add',
 		modify: '/api/goals',
 		contribute: '/api/goals/contribute',
+		planning: '/api/ai/goals-plan',
 		getGoals: () => `/api/goals`,
 	},
 	feedback: {
